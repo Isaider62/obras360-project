@@ -1,0 +1,25 @@
+{
+  "name": "@obras360-project/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@better-auth/expo": "catalog:",
+    "@obras360-project/db": "workspace:*",
+    "@obras360-project/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@obras360-project/config": "workspace:*",
+    "typescript": "^6"
+  }
+}

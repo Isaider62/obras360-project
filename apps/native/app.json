@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "scheme": "obras360-project",
+    "userInterfaceStyle": "automatic",
+    "orientation": "default",
+    "web": {
+      "bundler": "metro"
+    },
+    "name": "obras360-project",
+    "slug": "obras360-project",
+    "plugins": ["expo-font"],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
