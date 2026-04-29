@@ -1,26 +1,42 @@
 {
-  "mcp": {
-    "better-t-stack": {
-      "type": "local",
-      "command": ["bunx", "create-better-t-stack@latest", "mcp"],
-      "enabled": true,
-      "environment": {}
-    },
-    "context7": {
-      "type": "local",
-      "command": ["npx", "-y", "@upstash/context7-mcp"],
-      "enabled": true,
-      "environment": {}
-    },
-    "better-auth": {
-      "type": "remote",
-      "url": "https://mcp.inkeep.com/better-auth/mcp",
-      "enabled": true
-    },
-    "expo-mcp": {
-      "type": "remote",
-      "url": "https://mcp.expo.dev/mcp",
-      "enabled": true
-    }
-  }
+	"$schema": "https://opencode.ai/config.json",
+	"mcp": {
+		"better-t-stack": {
+			"type": "local",
+			"command": ["bunx", "create-better-t-stack@latest", "mcp"],
+			"enabled": true,
+			"environment": {}
+		},
+		"context7": {
+			"type": "local",
+			"command": ["npx", "-y", "@upstash/context7-mcp"],
+			"enabled": true,
+			"environment": {}
+		},
+		"better-auth": {
+			"type": "remote",
+			"url": "https://mcp.inkeep.com/better-auth/mcp",
+			"enabled": true
+		},
+		"expo-mcp": {
+			"type": "remote",
+			"url": "https://mcp.expo.dev/mcp",
+			"enabled": true
+		},
+		"heroui-native": {
+			"type": "local",
+			"command": ["npx", "-y", "@heroui/native-mcp@latest"],
+			"enabled": true
+		},
+		"composio": {
+			"type": "remote",
+			"url": "https://connect.composio.dev/mcp",
+			"enabled": true
+		},
+		"supabase": {
+			"type": "remote",
+			"url": "https://mcp.supabase.com/mcp?project_ref=gbtceqmdxbnbkephacus&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cbranching%2Cfunctions",
+			"enabled": true
+		}
+	}
 }

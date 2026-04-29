@@ -1,0 +1,20 @@
+- MCP config lives in opencode.json; read it before assuming any server/remote setup (local: better-t-stack, context7; remote: better-auth, expo).
+- Entrypoints: backend lives in apps/server, mobile app lives in apps/native; do not treat this as a single app repo.
+- Monorepo layout: packages/api, packages/auth, packages/db contain shared logic; apps/ hold the two primary applications.
+- Runtime/tooling: this project uses Bun; use bun install, bun run ... for tasks.
+- Start development for all apps: bun install; bun run dev (spin both server and native as configured).
+- Start only the server: bun run dev:server.
+- Start only the mobile app: bun run dev:native.
+- Database setup: update apps/server/.env with Postgres connection details and ensure the database is running before dev.
+- Schema management: apply schema with bun run db:push; run migrations with bun run db:migrate; inspect with bun run db:studio.
+- Prisma/types: generate types with bun run db:generate.
+- Code quality: enforce formatting and lint with bun run check (Biome-based); this is the primary pre-commit/check gate.
+- Pre-commit workflow: rely on the check script; Biome lints and formats (tab indentation, double quotes).
+- Investigation order: read README.md and opencode.json first, then workspace/config manifests, then config/codegen, then representative code paths for wiring and entrypoints.
+- No test command: this repo currently has no configured test suite; do not search for test runners.
+- Ports: server runs on 3000 (apps/server/.env BETTER_AUTH_URL), native on 3001 (CORS_ORIGIN).
+- Biome uses tab indentation and double quotes; configured in biome.json.
+- Server build: uses tsdown (not tsc), outputs to dist/.
+- Database: runs locally on port 5432 with default credentials (postgres:postgres) in apps/server/.env.
+- Native entry: expo-router/entry (apps/native/package.json main).
+- If extending guidance: prefer focused, one-task items over long tutorials; keep AGENTS.md concise and up-to-date.

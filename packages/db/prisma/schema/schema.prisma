@@ -1,10 +1,468 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated"
   moduleFormat = "esm"
-  runtime = "bun"
+  runtime = "node"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ============================================================
+// USUÁRIOS E AUTENTICAÇÃO (Better Auth)
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Campos OBRA360
+  perfil         Perfil    @default(ENCARREGADO)
+  biometriaHash  String?
+  fcmToken      String?
+  ativo          Boolean   @default(true)
+  
+  // Relations
+  sessions      Session[]
+  accounts      Account[]
+  solicitacoes   SolicitacaoMaterial[]
+  diarios       DiarioObra[]
+  fotos         Foto[]
+  alertas       Alerta[]
+  pontos        RegistroPonto[]
+  deviceTokens  DeviceToken[]
+
+  @@map("user")
+}
+
+enum Perfil {
+  ENCARREGADO
+  COMPRAS
+  GESTAO
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime?
+  token     String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken              String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                String?
+  password             String?
+  createdAt            DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ============================================================
+// OBRAS
+// ============================================================
+
+model Obra {
+  id              String    @id @default(cuid())
+  name           String
+  address        String?
+  status         StatusObra   @default(PLANEJAMENTO)
+  startDate    DateTime?
+  endDate      DateTime?
+  finishedDate DateTime?
+  budgetTotal  Decimal?  @db.Decimal(15, 2)
+  budgetCurrent Decimal?  @db.Decimal(15, 2)
+  location      Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  // Relations
+  encarregadoId String?  // FK para User (encarregado da obra)
+  
+  solicitacoes SolicitacaoMaterial[]
+  diarios      DiarioObra[]
+  fotos        Foto[]
+  alertas      Alerta[]
+  pontos       RegistroPonto[]
+  transacoes  Transacao[]
+
+  @@index([encarregadoId])
+  @@index([status])
+  @@map("obra")
+}
+
+enum StatusObra {
+  PLANEJAMENTO
+  EM_ANDAMENTO
+  CONCLUIDO
+  ARQUIVADO
+}
+
+// ============================================================
+// SOLICITAÇÕES DE MATERIAIS
+// ============================================================
+
+model SolicitacaoMaterial {
+  id            String              @id @default(cuid())
+  obraId        String
+  solicitanteId String
+  
+  item         String
+  quantity     Decimal             @db.Decimal(10, 3)
+  unit         String?            @default("un")
+  urgency      Urgency             @default(NORMAL)
+  observation  String?            @db.Text
+  imageUrl     String?
+  voiceUrl     String?
+  status       SolicitacaoStatus  @default(ABERTA)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  obra         Obra    @relation(fields: [obraId], references: [id])
+  solicitante User    @relation(fields: [solicitanteId], references: [id])
+
+  @@index([obraId])
+  @@index([solicitanteId])
+  @@index([status])
+  @@map("solicitacao_material")
+}
+
+enum Urgency {
+  NORMAL
+  URGENTE
+  CRITICAL
+}
+
+enum SolicitacaoStatus {
+  ABERTA
+  EM_ANALISE
+  EM_COTACAO
+  APROVADA
+  COMPRADA
+  ENVIADA
+  ENTREGUE
+  CANCELADA
+  REJEITADA
+}
+
+// ============================================================
+// REGISTRO DE PONTO
+// ============================================================
+
+model RegistroPonto {
+  id            String    @id @default(cuid())
+  obraId        String
+  encarregadoId String
+  date         DateTime  @db.Date
+  entryTime   DateTime  @db.Time
+  exitTime    DateTime?  @db.Time
+  team        Json?
+  signatureUrl String?
+  weather     String?
+  synced     Boolean   @default(false)
+  syncError  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
+  obra        Obra  @relation(fields: [obraId], references: [id])
+  encarregado User @relation(fields: [encarregadoId], references: [id])
+
+  @@unique([obraId, date])
+  @@index([obraId])
+  @@index([encarregadoId])
+  @@map("registro_ponto")
+}
+
+// ============================================================
+// DIÁRIO DE OBRA
+// ============================================================
+
+model DiarioObra {
+  id          String    @id @default(cuid())
+  obraId      String
+  userId     String
+  date       DateTime  @db.Date
+  activities String?   @db.Text
+  problems   String?   @db.Text
+  notes      String?   @db.Text
+  progressPct Decimal?  @db.Decimal(5, 2)
+  weather    Json?
+  synced     Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  obra     Obra  @relation(fields: [obraId], references: [id])
+  usuario  User @relation(fields: [userId], references: [id])
+
+  @@unique([obraId, date])
+  @@index([obraId])
+  @@map("diario_obra")
+}
+
+// ============================================================
+// NOTIFICAÇÕES (Supabase)
+// ============================================================
+
+model DeviceToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token    String
+  platform String   @default("mobile") // mobile, web, ios, android
+  active   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  usuario User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, token])
+  @@index([userId])
+  @@map("device_token")
+}
+// ============================================================
+
+model Foto {
+  id            String    @id @default(cuid())
+  obraId        String
+  userId        String
+  url           String
+  thumbnail     String?
+  stageIa      EtapaObra?
+  confidenceIa Decimal?  @db.Decimal(5, 4)
+  tagsIa       String?
+  location     Json?
+  capturedAt   DateTime   @default(now())
+  synced       Boolean    @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime   @default(now())
+
+  // Relations
+  obra      Obra  @relation(fields: [obraId], references: [id])
+  usuario   User  @relation(fields: [userId], references: [id])
+
+  @@index([obraId])
+  @@index([stageIa])
+  @@map("foto")
+}
+
+enum EtapaObra {
+  FUNDACAO
+  ESTRUTURA
+  ALVENARIA
+  INSTALACOES
+  ACABAMENTO
+}
+
+// ============================================================
+// ALERTAS
+// ============================================================
+
+model Alerta {
+  id           String       @id @default(cuid())
+  obraId       String
+  userId      String?
+  type        TipoAlerta
+  source      OrigemAlerta
+  severity    Severity
+  title      String
+  description String?     @db.Text
+  data       Json?
+  resolved   Boolean      @default(false)
+  resolvedAt DateTime?
+  resolution String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  // Relations
+  obra      Obra   @relation(fields: [obraId], references: [id])
+  usuario   User?  @relation(fields: [userId], references: [id])
+
+  @@index([obraId])
+  @@index([resolved])
+  @@map("alerta")
+}
+
+enum TipoAlerta {
+  FALTA_MATERIAL
+  ATRASO
+  INTERFERENCIA
+  CUSTO
+  PRAZO
+  SINCRONIZACAO
+}
+
+enum OrigemAlerta {
+  USUARIO
+  SISTEMA
+  IA
+}
+
+enum Severity {
+  INFO
+  WARNING
+  ALERT
+  CRITICAL
+}
+
+// ============================================================
+// PEDIDOS DE COMPRA
+// ============================================================
+
+model PedidoCompra {
+  id             String        @id @default(cuid())
+  solicitacaoId    String        @unique
+  fornecedorId    String?
+  totalValue    Decimal       @db.Decimal(15, 2)
+  deliveryDate  DateTime?
+  status       StatusPedido  @default(AGUARDANDO)
+  nfUrl        String?
+  nfNumber     String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relations
+  fornecedor  Fornecedor?        @relation(fields: [fornecedorId], references: [id])
+
+  @@index([fornecedorId])
+  @@index([status])
+  @@map("pedido_compra")
+}
+
+enum StatusPedido {
+  AGUARDANDO
+  COTANDO
+  APROVADO
+  COMPRADO
+  ENVIADO
+  ENTREGUE
+  CANCELADO
+}
+
+model Fornecedor {
+  id         String   @id @default(cuid())
+  name      String
+  cnpj      String?  @unique
+  contact   String?
+  phone     String?
+  email     String?
+  address   String?
+  defaultDays Int?   // Prazo padrão de entrega em dias
+  rating    Int?     @default(5) // 1-5
+  
+  ativo     Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pedidos PedidoCompra[]
+
+  @@index([ativo])
+  @@map("fornecedor")
+}
+
+model SyncQueue {
+  id           String       @id @default(cuid())
+  entity       String
+  entityId    String
+  operation   OperacaoSync
+  payload     Json
+  attempts    Int          @default(0)
+  lastError   String?
+  syncedAt    DateTime?
+  createdAt   DateTime     @default(now())
+
+  @@unique([entity, entityId, operation])
+  @@index([syncedAt])
+  @@map("sync_queue")
+}
+
+enum OperacaoSync {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+// ============================================================
+// FLUXO DE CAIXA
+// ============================================================
+
+model Transacao {
+  id          String    @id @default(cuid())
+  obraId      String
+  tipo        TransacaoTipo
+  categoria  String
+  descricao   String?
+  valor       Decimal   @db.Decimal(15, 2)
+  data        DateTime   @db.Date
+  pago        Boolean    @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  obra        Obra      @relation(fields: [obraId], references: [id])
+
+  @@index([obraId])
+  @@index([data])
+  @@map("transacao")
+}
+
+enum TransacaoTipo {
+  RECEITA
+  DESPESA
+}
+
+// ============================================================
+// CACHE
+// ============================================================
+
+model CacheEntry {
+  key     String   @id @unique
+  value   Json
+  expired DateTime?
+  created DateTime @default(now())
+
+  @@index([expired])
+  @@map("cache_entry")
 }
