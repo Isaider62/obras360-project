@@ -6,16 +6,13 @@
 	"build": {
 		"development": {
 			"developmentClient": true,
-			"distribution": "internal",
-			"gitSubdirectory": "apps/native"
+			"distribution": "internal"
 		},
 		"preview": {
-			"distribution": "internal",
-			"gitSubdirectory": "apps/native"
+			"distribution": "internal"
 		},
 		"production": {
-			"autoIncrement": true,
-			"gitSubdirectory": "apps/native"
+			"autoIncrement": true
 		}
 	},
 	"submit": {
