@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "07a001fc-5b56-48e9-bf3a-bd78a481f832"
+      }
+    },
+    "android": {
+      "package": "com.isaider.obras360project"
+    }
+  }
+}
